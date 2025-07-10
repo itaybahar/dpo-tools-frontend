@@ -1,0 +1,262 @@
+.gdpr-audit-page {
+    min-height: 100vh;
+    background-color: #f8f9fb;
+    display: flex;
+}
+
+.audit-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    min-height: 100vh;
+}
+
+.audit-sidebar {
+    width: 400px;
+    background-color: #f5f6fa;
+    padding: 40px 30px;
+    border-right: 1px solid #e1e5e9;
+}
+
+.audit-sidebar h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 2rem;
+    font-weight: 600;
+}
+
+.audit-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.audit-section-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.audit-section-item:hover {
+    background-color: #e8ecf0;
+}
+
+.audit-section-item.completed {
+    background-color: #d4edda;
+    border-left: 4px solid #28a745;
+}
+
+.audit-section-item.active {
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+}
+
+.audit-section-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.section-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.audit-section-item.completed .section-number {
+    background-color: #28a745;
+}
+
+.audit-section-item.active .section-number {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.section-label {
+    font-size: 0.95rem;
+    color: #333;
+    font-weight: 500;
+    flex: 1;
+}
+
+.lock-icon {
+    margin-left: auto;
+    font-size: 1rem;
+}
+
+.audit-main-content {
+    flex: 1;
+    padding: 60px 80px;
+    background-color: white;
+}
+
+.audit-overview h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 2rem;
+    font-weight: 600;
+}
+
+.audit-description,
+.audit-instructions {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.icon-legend {
+    margin: 3rem 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.legend-item span {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+.action-buttons {
+    margin-top: 3rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.start-audit-btn,
+.start-later-btn,
+.finish-btn {
+    padding: 16px 32px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.start-audit-btn {
+    background: linear-gradient(45deg, #FFB74D, #FF7043);
+    color: white;
+}
+
+.start-later-btn,
+.finish-btn {
+    background: white;
+    color: #666;
+    border: 2px solid #e1e5e9;
+}
+
+.start-audit-btn:hover,
+.start-later-btn:hover,
+.finish-btn:hover {
+    transform: translateY(-2px);
+}
+
+.audit-section h1 {
+    font-size: 2.2rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.section-description,
+.conditional-text {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.audit-questions {
+    max-width: 700px;
+}
+
+.question-block {
+    margin-bottom: 3rem;
+    padding: 20px 0;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.question-block h3 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.radio-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.radio-options label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 12px 0;
+}
+
+.radio-options input[type="radio"] {
+    margin-right: 12px;
+}
+
+.navigation-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e1e5e9;
+}
+
+@media (max-width: 1024px) {
+    .audit-container {
+        flex-direction: column;
+    }
+
+    .audit-sidebar {
+        width: 100%;
+        padding: 20px;
+    }
+
+    .audit-main-content {
+        padding: 40px 20px;
+    }
+
+    .icon-legend {
+        grid-template-columns: 1fr;
+    }
+}

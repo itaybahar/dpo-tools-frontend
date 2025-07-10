@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="92" height="40" viewBox="0 0 92 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- "we" text -->
+    <text x="0" y="25" font-family="Inter" font-size="24" font-weight="700" fill="black">we</text>
+    
+    <!-- Vertical line -->
+    <line x1="40" y1="0" x2="40" y2="24" stroke="black" stroke-width="1"/>
+    
+    <!-- Gradient definitions -->
+    <defs>
+        <linearGradient id="orange-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF8F6B"/>
+            <stop offset="100%" style="stop-color:#FF6B2C"/>
+        </linearGradient>
+        <linearGradient id="pink-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FF6BC4"/>
+            <stop offset="100%" style="stop-color:#FF2C78"/>
+        </linearGradient>
+        <linearGradient id="purple-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#B26BFF"/>
+            <stop offset="100%" style="stop-color:#7C2CFF"/>
+        </linearGradient>
+    </defs>
+    
+    <!-- Circles -->
+    <circle cx="52" cy="20" r="12" fill="#FF6B2C"/>
+    <circle cx="72" cy="20" r="12" fill="#FF2C78"/>
+    <circle cx="92" cy="20" r="12" fill="#7C2CFF"/>
+</svg> 

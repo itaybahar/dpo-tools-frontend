@@ -1,0 +1,134 @@
+.navbar {
+    background-color: white;
+    padding: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-logo {
+    text-decoration: none;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logo-circles {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.circle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.circle.orange {
+    background-color: #FF7043;
+}
+
+.circle.pink {
+    background-color: #E91E63;
+}
+
+.circle.blue {
+    background-color: #2196F3;
+}
+
+.logo-text {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #333;
+    margin-left: 0.3rem;
+}
+
+.navbar-menu {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.navbar-item {
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.navbar-item:hover {
+    color: #333;
+}
+
+.navbar-buttons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.apply-btn {
+    text-decoration: none;
+    padding: 10px 20px;
+    border: 2px solid #e1e5e9;
+    border-radius: 20px;
+    color: #333;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.apply-btn:hover {
+    border-color: #FFB74D;
+    background-color: #FFB74D;
+    color: white;
+}
+
+.signin-btn {
+    text-decoration: none;
+    padding: 10px 20px;
+    background: linear-gradient(45deg, #FFB74D, #FF7043);
+    color: white;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: transform 0.2s;
+}
+
+.signin-btn:hover {
+    transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+    .navbar-container {
+        padding: 0 1rem;
+    }
+
+    .navbar-menu {
+        display: none;
+    }
+
+    .navbar-buttons {
+        gap: 0.5rem;
+    }
+
+    .apply-btn,
+    .signin-btn {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+    }
+}
