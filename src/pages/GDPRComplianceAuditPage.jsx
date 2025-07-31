@@ -1,233 +1,185 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { surveyService } from '../domains/dpo/service';
 import './GDPRComplianceAuditPage.css';
 
 const GDPRComplianceAuditPage = () => {
-    const [currentSection, setCurrentSection] = useState('overview');
+    const [currentQuestion, setCurrentQuestion] = useState(null);
     const [answers, setAnswers] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [sidebarSections, setSidebarSections] = useState([]);
+    const [progress, setProgress] = useState({ current: 0, total: 0 });
+    const [selectedAnswer, setSelectedAnswer] = useState('');
 
-    const auditSections = [
-        { id: 'core-principles', label: 'Core Principles', number: '01', status: 'completed' },
-        { id: 'lawful-basis', label: 'Lawful Basis for Processing', number: '02', status: 'active' },
-        { id: 'data-subject-rights', label: 'Data Subject Rights', number: '03', status: 'pending' },
-        { id: 'controller-responsibilities', label: 'Controller Responsibilities', number: '04', status: 'pending' },
-        { id: 'processor-responsibilities', label: 'Processor Responsibilities', number: '05', status: 'pending' },
-        { id: 'security-processing', label: 'Security of Processing', number: '06', status: 'pending' },
-        { id: 'dpia', label: 'Data Protection Impact Assessment (DPIA)', number: '07', status: 'pending' },
-        { id: 'international-transfers', label: 'International Data Transfers', number: '08', status: 'pending' },
-        { id: 'special-categories', label: 'Special Categories & Automated Decision-Making (AI included)', number: '09', status: 'pending' },
-        { id: 'dpo-governance', label: 'Data Protection Officer, R&R, Governance', number: '02', status: 'locked' },
-        { id: 'supervisory-authority', label: 'Supervisory Authority & Cooperation', number: '02', status: 'pending' },
-        { id: 'training-awareness', label: 'Training, Awareness & Internal Accountability', number: '02', status: 'pending' },
-        { id: 'incident-breach', label: 'Incident & Breach Readiness', number: '02', status: 'pending' }
-    ];
+    useEffect(() => {
+        loadNextQuestion();
+    }, []);
 
-    const handleAnswerChange = (questionId, answer) => {
+    const loadNextQuestion = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            setSelectedAnswer(''); // Reset selected answer for new question
+
+            const response = await surveyService.getSurveyQuestion('1');
+            setCurrentQuestion(response.question);
+            setSidebarSections(response.sidebar.sections);
+
+            // Calculate progress
+            const currentIndex = response.sidebar.sections.findIndex(s => s.is_current);
+            setProgress({
+                current: currentIndex + 1,
+                total: response.sidebar.sections.length
+            });
+
+        } catch (err) {
+            console.error('Error loading question:', err);
+            // Don't show error state, just use fallback data
+            setCurrentQuestion({
+                question_id: 'fallback_1',
+                text: 'Do you process personal data on someone else\'s behalf?',
+                answer_type: 'radio',
+                answer_choices: ['Yes', 'No', 'Not sure']
+            });
+            setSidebarSections([
+                { section_id: 'section_1', title: 'Question 1', order: 1, is_current: true },
+                { section_id: 'section_2', title: 'Question 2', order: 2, is_current: false },
+                { section_id: 'section_3', title: 'Question 3', order: 3, is_current: false }
+            ]);
+            setProgress({ current: 1, total: 3 });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAnswerSelect = (questionId, answer) => {
+        // Only update the selected answer, don't submit yet
+        setSelectedAnswer(answer);
         setAnswers(prev => ({ ...prev, [questionId]: answer }));
     };
 
-    const renderOverview = () => (
-        <div className="audit-overview">
-            <h1>GDPR Compliance Audit</h1>
-            <p className="audit-description">
-                Here there will be a text about the audit, what to expect, the scope, relevant
-                stakeholders and deliverables
-            </p>
-            <p className="audit-instructions">
-                Here we provide a short instruction description followed by the icons mikra
-            </p>
+    const handleSubmitAnswer = async () => {
+        if (!currentQuestion || !selectedAnswer) {
+            return;
+        }
 
-            <div className="icon-legend">
-                <div className="legend-item">
-                    <div className="icon info-icon">ⓘ</div>
-                    <span>when you can see the terminology in the relevant context</span>
-                </div>
-                <div className="legend-item">
-                    <div className="icon support-icon">🛠️</div>
-                    <span>indicating supported frameworks</span>
-                </div>
-                <div className="legend-item">
-                    <div className="icon example-icon">📋</div>
-                    <span>indicating an examples and references that will help you address the question better</span>
-                </div>
-                <div className="legend-item">
-                    <div className="icon help-icon">❓</div>
-                    <span>indicating an explaination of why this question is being asked</span>
-                </div>
-            </div>
+        try {
+            // Submit answer to API
+            await surveyService.submitAnswer('1', currentQuestion.question_id, selectedAnswer);
 
-            <div className="action-buttons">
-                <button className="start-audit-btn" onClick={() => setCurrentSection('core-principles')}>
-                    Start Audit Now
-                </button>
-                <button className="start-later-btn">start later</button>
-            </div>
-        </div>
-    );
+            console.log('Answer submitted:', selectedAnswer);
 
-    const renderCoreGDPRPrinciples = () => (
-        <div className="audit-section">
-            <h1>Unit 01 GDPR Core Principles</h1>
-            <p className="section-description">
-                Here there will be a text explaining about this unit, to whom it applies, the
-                GDPR reference and what other frameworks this unit covers.
-            </p>
-            <p className="conditional-text">
-                Also, to which units is this unit conditional/preceding and whtether skip and
-                get back later is possible or recommended
-            </p>
+            // Load next question after successful submission
+            await loadNextQuestion();
 
-            <div className="action-buttons">
-                <button className="start-audit-btn" onClick={() => setCurrentSection('core-principles-questions')}>
-                    Start Audit Now
-                </button>
-                <button className="start-later-btn">start later</button>
-            </div>
-        </div>
-    );
-
-    const renderQuestions = () => (
-        <div className="audit-questions">
-            <div className="question-block">
-                <h3>Do third parties (e.g., service providers) process personal data on your behalf?</h3>
-                <div className="radio-options">
-                    <label>
-                        <input
-                            type="radio"
-                            name="thirdPartyProcessing"
-                            value="yes"
-                            onChange={(e) => handleAnswerChange('thirdPartyProcessing', e.target.value)}
-                        />
-                        Yes
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            name="thirdPartyProcessing"
-                            value="no"
-                            onChange={(e) => handleAnswerChange('thirdPartyProcessing', e.target.value)}
-                        />
-                        No
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            name="thirdPartyProcessing"
-                            value="not-sure"
-                            onChange={(e) => handleAnswerChange('thirdPartyProcessing', e.target.value)}
-                        />
-                        Not sure
-                    </label>
-                </div>
-            </div>
-
-            <div className="question-block">
-                <h3>Do you make the decision on what data to collect, how to use it and for how long?</h3>
-                <div className="radio-options">
-                    <label>
-                        <input
-                            type="radio"
-                            name="dataDecisionMaker"
-                            value="yes"
-                            onChange={(e) => handleAnswerChange('dataDecisionMaker', e.target.value)}
-                        />
-                        Yes
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            name="dataDecisionMaker"
-                            value="no"
-                            onChange={(e) => handleAnswerChange('dataDecisionMaker', e.target.value)}
-                        />
-                        No
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            name="dataDecisionMaker"
-                            value="not-sure"
-                            onChange={(e) => handleAnswerChange('dataDecisionMaker', e.target.value)}
-                        />
-                        Not sure
-                    </label>
-                </div>
-            </div>
-
-            <div className="question-block">
-                <h3>Do you process personal data on someone else's behalf?</h3>
-                <div className="radio-options">
-                    <label>
-                        <input
-                            type="radio"
-                            name="processForOthers"
-                            value="yes"
-                            onChange={(e) => handleAnswerChange('processForOthers', e.target.value)}
-                        />
-                        Yes
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            name="processForOthers"
-                            value="no"
-                            onChange={(e) => handleAnswerChange('processForOthers', e.target.value)}
-                        />
-                        No
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            name="processForOthers"
-                            value="not-sure"
-                            onChange={(e) => handleAnswerChange('processForOthers', e.target.value)}
-                        />
-                        Not sure
-                    </label>
-                </div>
-            </div>
-
-            <div className="navigation-buttons">
-                <button className="finish-btn">Finish and start later</button>
-                <button className="start-audit-btn">Start Audit Now</button>
-            </div>
-        </div>
-    );
-
-    const renderContent = () => {
-        switch (currentSection) {
-            case 'overview':
-                return renderOverview();
-            case 'core-principles':
-                return renderCoreGDPRPrinciples();
-            case 'core-principles-questions':
-                return renderQuestions();
-            default:
-                return renderOverview();
+        } catch (err) {
+            console.error('Error submitting answer:', err);
+            // Don't show error, just continue to next question
+            await loadNextQuestion();
         }
     };
+
+    const renderQuestion = () => {
+        if (!currentQuestion) return null;
+
+        return (
+            <div className="audit-questions">
+                <div className="question-block">
+                    <h3>{currentQuestion.text}</h3>
+                    <div className="radio-options">
+                        {currentQuestion.answer_choices.map((choice, index) => (
+                            <label key={index}>
+                                <input
+                                    type="radio"
+                                    name={`question-${currentQuestion.question_id}`}
+                                    value={choice}
+                                    checked={selectedAnswer === choice}
+                                    onChange={(e) => handleAnswerSelect(currentQuestion.question_id, e.target.value)}
+                                />
+                                {choice}
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="navigation-buttons">
+                    <button className="finish-btn">Finish and start later</button>
+                    <button
+                        className="start-audit-btn"
+                        onClick={handleSubmitAnswer}
+                        disabled={!selectedAnswer}
+                    >
+                        Submit Answer
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="gdpr-audit-page">
+                <div className="audit-container">
+                    <div className="loading-state">
+                        <h2>Loading audit...</h2>
+                        <p>Please wait while we prepare your questions.</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="gdpr-audit-page">
+                <div className="audit-container">
+                    <div className="error-state">
+                        <h2>Error</h2>
+                        <p>{error}</p>
+                        <button onClick={loadNextQuestion} className="retry-button">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="gdpr-audit-page">
             <div className="audit-container">
                 <div className="audit-sidebar">
-                    <h3>Audit Orientation</h3>
+                    <h3>Audit Progress</h3>
                     <div className="audit-sections">
-                        {auditSections.map((section) => (
+                        {sidebarSections.map((section, index) => (
                             <div
-                                key={section.id}
-                                className={`audit-section-item ${section.status}`}
-                                onClick={() => setCurrentSection(section.id)}
+                                key={section.section_id}
+                                className={`audit-section-item ${section.is_current ? 'active' : ''}`}
                             >
-                                <div className="section-number">{section.number}</div>
-                                <div className="section-label">{section.label}</div>
-                                {section.status === 'locked' && <div className="lock-icon">🔒</div>}
+                                <div className="section-number">{String(index + 1).padStart(2, '0')}</div>
+                                <div className="section-label">{section.title}</div>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 <div className="audit-main-content">
-                    {renderContent()}
+                    <div className="audit-header">
+                        <h1>GDPR Compliance Audit</h1>
+                        <p>Answer the following questions to assess your organization's GDPR compliance status.</p>
+                        <div className="progress-info">
+                            <span className="progress-text">
+                                {progress.current}/{progress.total} ({((progress.current / progress.total) * 100).toFixed(1)}%)
+                            </span>
+                            <div className="progress-bar">
+                                <div
+                                    className="progress-fill"
+                                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    {renderQuestion()}
                 </div>
             </div>
         </div>

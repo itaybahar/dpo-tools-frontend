@@ -37,7 +37,6 @@
     align-items: center;
     padding: 15px 20px;
     border-radius: 8px;
-    cursor: pointer;
     transition: background-color 0.2s;
     position: relative;
 }
@@ -46,19 +45,9 @@
     background-color: #e8ecf0;
 }
 
-.audit-section-item.completed {
-    background-color: #d4edda;
-    border-left: 4px solid #28a745;
-}
-
 .audit-section-item.active {
     background-color: #fff3cd;
     border-left: 4px solid #ffc107;
-}
-
-.audit-section-item.locked {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .section-number {
@@ -76,10 +65,6 @@
     flex-shrink: 0;
 }
 
-.audit-section-item.completed .section-number {
-    background-color: #28a745;
-}
-
 .audit-section-item.active .section-number {
     background-color: #ffc107;
     color: #333;
@@ -92,116 +77,60 @@
     flex: 1;
 }
 
-.lock-icon {
-    margin-left: auto;
-    font-size: 1rem;
-}
-
 .audit-main-content {
     flex: 1;
     padding: 60px 80px;
     background-color: white;
 }
 
-.audit-overview h1 {
+.audit-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.audit-header h1 {
     font-size: 2.5rem;
     color: #333;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     font-weight: 600;
 }
 
-.audit-description,
-.audit-instructions {
+.audit-header p {
     font-size: 1.1rem;
     color: #666;
     margin-bottom: 2rem;
     line-height: 1.6;
 }
 
-.icon-legend {
-    margin: 3rem 0;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
+.progress-info {
+    margin-bottom: 20px;
 }
 
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-
-.legend-item span {
-    font-size: 0.9rem;
-    color: #666;
-    line-height: 1.4;
-}
-
-.action-buttons {
-    margin-top: 3rem;
-    display: flex;
-    gap: 1rem;
-}
-
-.start-audit-btn,
-.start-later-btn,
-.finish-btn {
-    padding: 16px 32px;
-    border: none;
-    border-radius: 8px;
+.progress-text {
+    display: block;
     font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.start-audit-btn {
-    background: linear-gradient(45deg, #FFB74D, #FF7043);
-    color: white;
-}
-
-.start-later-btn,
-.finish-btn {
-    background: white;
-    color: #666;
-    border: 2px solid #e1e5e9;
-}
-
-.start-audit-btn:hover,
-.start-later-btn:hover,
-.finish-btn:hover {
-    transform: translateY(-2px);
-}
-
-.audit-section h1 {
-    font-size: 2.2rem;
     color: #333;
-    margin-bottom: 1.5rem;
-    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
 }
 
-.section-description,
-.conditional-text {
-    font-size: 1.1rem;
-    color: #666;
-    margin-bottom: 2rem;
-    line-height: 1.6;
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e1e5e9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #007bff;
+    transition: width 0.3s ease;
 }
 
 .audit-questions {
     max-width: 700px;
+    margin: 0 auto;
 }
 
 .question-block {
@@ -242,6 +171,75 @@
     border-top: 1px solid #e1e5e9;
 }
 
+.start-audit-btn,
+.start-later-btn,
+.finish-btn {
+    padding: 16px 32px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.start-audit-btn {
+    background: linear-gradient(45deg, #FFB74D, #FF7043);
+    color: white;
+}
+
+.start-audit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.start-later-btn,
+.finish-btn {
+    background: white;
+    color: #666;
+    border: 2px solid #e1e5e9;
+}
+
+.start-audit-btn:hover:not(:disabled),
+.start-later-btn:hover,
+.finish-btn:hover {
+    transform: translateY(-2px);
+}
+
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-state h2,
+.error-state h2 {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.loading-state p,
+.error-state p {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.retry-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+    background-color: #0056b3;
+}
+
 @media (max-width: 1024px) {
     .audit-container {
         flex-direction: column;
@@ -254,9 +252,5 @@
 
     .audit-main-content {
         padding: 40px 20px;
-    }
-
-    .icon-legend {
-        grid-template-columns: 1fr;
     }
 }
