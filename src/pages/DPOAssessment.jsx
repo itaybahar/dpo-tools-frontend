@@ -14,48 +14,78 @@ const DPOAssessment = () => {
     const [selectedAnswer, setSelectedAnswer] = useState('');
 
     useEffect(() => {
-        loadNextQuestion();
+        // Load the first question using current user ID
+        const userId = surveyService.getCurrentUserId();
+        loadNextQuestion(userId);
     }, []);
 
-    const loadNextQuestion = async () => {
+    const restartAssessment = () => {
+        // Reset all state to initial values
+        setCurrentQuestion(null);
+        setSelectedAnswer('');
+        setLoading(true);
+        setError(null);
+        setProgress({ current: 0, total: 0 });
+        setSidebarSections([]);
+        setUsingFallback(false);
+
+        // Generate a new user ID to start fresh with the API
+        const newUserId = surveyService.generateNewUserId();
+
+        // Add restart parameter to URL to force fallback data
+        const url = new URL(window.location);
+        url.searchParams.set('restart', 'true');
+        window.history.replaceState({}, '', url);
+
+        // Add a small delay to ensure state is properly reset
+        setTimeout(() => {
+            loadNextQuestion(newUserId);
+        }, 100);
+    };
+
+    const loadNextQuestion = async (userId) => {
         try {
             setLoading(true);
             setError(null);
-            setSelectedAnswer(''); // Reset selected answer for new question
+            // setSelectedAnswer(''); // This line was removed to avoid resetting selected answer too early
 
-            const response = await surveyService.getSurveyQuestion('1');
+            const response = await surveyService.getSurveyQuestion(userId);
 
             // Check if we're using fallback data
-            if (response.question.question_id === 'fallback_1') {
+            if (response.usingFallback) {
                 setUsingFallback(true);
+            } else {
+                setUsingFallback(false);
             }
 
             setCurrentQuestion(response.question);
             setSidebarSections(response.sidebar.sections);
 
-            // Calculate progress
-            const currentIndex = response.sidebar.sections.findIndex(s => s.is_current);
-            setProgress({
-                current: currentIndex + 1,
-                total: response.sidebar.sections.length
-            });
+            // Calculate progress - use API data if available, otherwise calculate from sections
+            if (response.progress) {
+                setProgress({
+                    current: Math.min(response.progress.answered + 1, response.progress.total),
+                    total: response.progress.total
+                });
+            } else {
+                const currentIndex = response.sidebar.sections.findIndex(s => s.is_current);
+                const totalSections = response.sidebar.sections.length;
+                setProgress({
+                    current: Math.min(currentIndex + 1, totalSections),
+                    total: totalSections
+                });
+            }
+
+            // Clean up restart parameter after successful load
+            if (response.question.question_id !== 'completed') {
+                const url = new URL(window.location);
+                url.searchParams.delete('restart');
+                window.history.replaceState({}, '', url);
+            }
 
         } catch (err) {
+            setError('Failed to load question');
             console.error('Error loading question:', err);
-            // Don't show error state, just use fallback data
-            setUsingFallback(true);
-            setCurrentQuestion({
-                question_id: 'fallback_1',
-                text: 'Are you a public authority or body?',
-                answer_type: 'radio',
-                answer_choices: ['Yes', 'No']
-            });
-            setSidebarSections([
-                { section_id: 'section_1', title: 'Question 1', order: 1, is_current: true },
-                { section_id: 'section_2', title: 'Question 2', order: 2, is_current: false },
-                { section_id: 'section_3', title: 'Question 3', order: 3, is_current: false }
-            ]);
-            setProgress({ current: 1, total: 3 });
         } finally {
             setLoading(false);
         }
@@ -68,28 +98,52 @@ const DPOAssessment = () => {
     };
 
     const handleSubmitAnswer = async () => {
-        if (!currentQuestion || !selectedAnswer) {
-            return;
-        }
+        if (!selectedAnswer || !currentQuestion) return;
 
         try {
-            // Submit answer to API
-            await surveyService.submitAnswer('1', currentQuestion.question_id, selectedAnswer);
-
+            // Submit the answer using current user ID
+            const userId = surveyService.getCurrentUserId();
+            await surveyService.submitAnswer(userId, currentQuestion.question_id, selectedAnswer);
             console.log('Answer submitted:', selectedAnswer);
 
-            // Load next question after successful submission
-            await loadNextQuestion();
+            // Reset selected answer
+            setSelectedAnswer('');
 
-        } catch (err) {
-            console.error('Error submitting answer:', err);
-            // Don't show error, just continue to next question
-            await loadNextQuestion();
+            // Small delay to allow backend to advance state before fetching next question
+            setTimeout(() => {
+                // Load the next question using current user ID
+                loadNextQuestion(userId);
+            }, 120);
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            setError('Failed to submit answer');
         }
     };
 
     const renderQuestion = () => {
         if (!currentQuestion) return null;
+
+        // Check if assessment is completed
+        if (currentQuestion.question_id === 'completed') {
+            return (
+                <div className="question-content">
+                    <div className="completion-message">
+                        <h2>🎉 Assessment Complete!</h2>
+                        <p>{currentQuestion.text}</p>
+                        <div className="completion-summary">
+                            <p><strong>Progress:</strong> {Math.min(progress.current, progress.total)}/{progress.total} questions completed</p>
+                            <p><strong>Percentage:</strong> {Math.min(Math.round((progress.current / progress.total) * 100), 100)}%</p>
+                        </div>
+                        <button
+                            className="restart-assessment-btn"
+                            onClick={restartAssessment}
+                        >
+                            Restart Assessment
+                        </button>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div className="assessment-question">
@@ -127,17 +181,17 @@ const DPOAssessment = () => {
                 </div>
 
                 <div className="question-content">
-                    <h2>{currentQuestion.text}</h2>
+                    <h2>{currentQuestion.text || currentQuestion.question || 'Question loading...'}</h2>
 
                     <div className="answer-options">
                         {currentQuestion.answer_type === 'dropdown' ? (
                             <select
-                                onChange={(e) => handleAnswerSelect(currentQuestion.question_id, e.target.value)}
+                                onChange={(e) => handleAnswerSelect(currentQuestion.question_id || 'default', e.target.value)}
                                 value={selectedAnswer}
                                 className="answer-dropdown"
                             >
                                 <option value="">--- select ---</option>
-                                {currentQuestion.answer_choices.map((choice, index) => (
+                                {(currentQuestion.answer_choices || ['Yes', 'No']).map((choice, index) => (
                                     <option key={index} value={choice}>
                                         {choice}
                                     </option>
@@ -145,14 +199,14 @@ const DPOAssessment = () => {
                             </select>
                         ) : (
                             <div className="radio-options">
-                                {currentQuestion.answer_choices.map((choice, index) => (
+                                {(currentQuestion.answer_choices || ['Yes', 'No']).map((choice, index) => (
                                     <label key={index} className="radio-option">
                                         <input
                                             type="radio"
-                                            name={`question-${currentQuestion.question_id}`}
+                                            name={`question-${currentQuestion.question_id || 'default'}`}
                                             value={choice}
                                             checked={selectedAnswer === choice}
-                                            onChange={(e) => handleAnswerSelect(currentQuestion.question_id, e.target.value)}
+                                            onChange={(e) => handleAnswerSelect(currentQuestion.question_id || 'default', e.target.value)}
                                         />
                                         {choice}
                                     </label>
