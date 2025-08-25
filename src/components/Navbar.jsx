@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './Navbar.css';
 
-const Navbar: React.FC = () => {
+const Navbar = () => {
     return (
         <nav className="navbar">
             <div className="navbar-container">
@@ -18,10 +18,11 @@ const Navbar: React.FC = () => {
                 </Link>
 
                 <div className="navbar-menu">
-                    <Link to="/" className="navbar-item">About</Link>
-                    <Link to="/ask-your-dpo" className="navbar-item">Solutions</Link>
-                    <Link to="/compliance-assessment" className="navbar-item">Pricing</Link>
-                    <Link to="/gdpr-audit" className="navbar-item">Contact</Link>
+                    <Link to="/" className="navbar-item">Home</Link>
+                    <Link to="/dpo-assessment" className="navbar-item">DPO Assessment</Link>
+                    <Link to="/ask-your-dpo" className="navbar-item">Ask Your DPO</Link>
+                    <Link to="/compliance-assessment" className="navbar-item">Compliance</Link>
+                    <Link to="/gdpr-audit" className="navbar-item">GDPR Audit</Link>
                 </div>
 
                 <div className="navbar-buttons">
