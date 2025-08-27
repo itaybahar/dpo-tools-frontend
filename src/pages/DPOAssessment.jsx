@@ -1,204 +1,407 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './DPOAssessment.css';
 
 const DPOAssessment = () => {
-    const [currentQuestion, setCurrentQuestion] = useState(1);
-    const [answers, setAnswers] = useState({});
-    const [showResult, setShowResult] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
+    const [currentQuestionData, setCurrentQuestionData] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [showSetup, setShowSetup] = useState(true);
+    const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+    const [showCompletion, setShowCompletion] = useState(false);
+    const [userAnswers, setUserAnswers] = useState({});
 
-    const questions = [
-        {
-            id: 1,
-            question: "Are you a public authority or body?",
-            options: ["Yes", "No", "Not Sure", "Partially", "N/A"],
-            color: "linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%)",
-            icon: "🏛️"
-        },
-        {
-            id: 2,
-            question: "Do your org's core activities require regular and systematic monitoring of individuals on a large scale?",
-            options: ["Yes", "No", "Not Sure", "Partially", "N/A"],
-            tooltip: "E.g., tracking and monitoring individuals' online behavior (web, CCTV, such as on the internet or on CCTV.",
-            details: {
-                title: "Large-scale processing can include:",
-                items: [
-                    "the numbers of data subjects;",
-                    "the volume of personal data being processed;",
-                    "the range of different data items being processed;",
-                    "the geographical extent of the activity; and",
-                    "the duration or permanence of the activity."
-                ]
-            },
-            color: "linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)",
-            icon: "📊"
-        },
-        {
-            id: 3,
-            question: "Do your org's core activities involve processing on a large scale 'special categories' of personal data, or 'criminal convictions or offenses data'?",
-            options: ["Yes", "No", "Not Sure", "Partially", "N/A"],
-            tooltip: "Special categories include sensitive personal data",
-            color: "linear-gradient(135deg, #A8E6CF 0%, #7FCDCD 100%)",
-            icon: "🔒"
-        }
+    // Generate random user ID for each session automatically
+    const [userId] = useState(() => Math.floor(Math.random() * 1000000) + 100000);
+
+    // Single API endpoint as specified
+    const API_ENDPOINT = 'https://wedpo.onrender.com/api/survey';
+
+    // Section colors for visual appeal
+    const sectionColors = [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+        '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+        '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#D7BDE2',
+        '#FAD7A0', '#A9DFBF', '#F5B7B1', '#AED6F1', '#D2B4DE'
     ];
 
-    const auditSteps = [
-        { id: 1, title: "Public Authority Check", description: "Determine if organization is a public authority" },
-        { id: 2, title: "Large Scale Monitoring", description: "Assess monitoring activities scale" },
-        { id: 3, title: "Special Categories", description: "Evaluate sensitive data processing" }
-    ];
+    const startQuestionnaire = () => {
+        // Automatically use the generated user ID
+        setCurrentUserId(userId);
 
-    const handleAnswer = (questionId, answer) => {
-        setAnswers(prev => ({ ...prev, [questionId]: answer }));
+        setShowSetup(false);
+        setShowQuestionnaire(true);
+        setShowCompletion(false);
+        setError(null);
+
+        // Load question immediately with the current userId
+        loadCurrentQuestionWithId(userId);
     };
 
-    const handleContinue = () => {
-        if (currentQuestion < questions.length) {
-            setCurrentQuestion(prev => prev + 1);
-        } else {
-            // Calculate result based on answers
-            const needsDPO = Object.values(answers).some(answer => answer === "Yes");
-            setShowResult(true);
+    const resetQuestionnaire = () => {
+        setShowSetup(true);
+        setShowQuestionnaire(false);
+        setShowCompletion(false);
+        setCurrentQuestionData(null);
+        setUserAnswers({});
+        setError(null);
+        // Generate new user ID for new session
+        const newUserId = Math.floor(Math.random() * 1000000) + 100000;
+        setCurrentUserId(newUserId);
+    };
+
+    const loadCurrentQuestionWithId = async (userId) => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            console.log('Loading question for user ID:', userId);
+            const response = await fetch(`${API_ENDPOINT}/?user_id=${userId}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to load question');
+            }
+
+            if (data.completed) {
+                displayCompletion();
+                return;
+            }
+
+            setCurrentQuestionData(data);
+            console.log('Question loaded:', data);
+
+        } catch (error) {
+            console.error('Error loading question:', error);
+            setError('Error loading question: ' + error.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const getCurrentQuestion = () => {
-        return questions.find(q => q.id === currentQuestion);
+    const loadCurrentQuestion = async () => {
+        // Use the current user ID from state
+        if (currentUserId) {
+            await loadCurrentQuestionWithId(currentUserId);
+        }
     };
 
-    const renderResult = () => {
-        const needsDPO = Object.values(answers).some(answer => answer === "Yes");
+    const renderSidebar = (sidebarData) => {
+        if (!sidebarData || !sidebarData.sections) return null;
 
         return (
-            <div className="assessment-result">
-                <div className="result-summary">
-                    {answers[1] === "No" && answers[2] === "No" && answers[3] === "No" ? (
-                        <>
-                            <h2>Result:</h2>
-                            <h3>Your organisation does not need a data protection officer.</h3>
-                            <p>
-                                Although you may not need to appoint a DPO, it's important to have someone in your organization who is
-                                responsible for data protection, and you can voluntarily appoint a DPO.
-                            </p>
-                            <button className="service-button">Appoint your DPO as a Service</button>
-                        </>
-                    ) : (
-                        <>
-                            <h2>Result:</h2>
-                            <h3>Your organisation needs a data protection officer.</h3>
-                            <p>Based on your answers, your organization meets the criteria for mandatory DPO appointment under GDPR.</p>
-                            <button className="service-button">Appoint your DPO as a Service</button>
-                        </>
-                    )}
+            <div className="sidebar">
+                <h3>Sections</h3>
+                <div className="sections-list">
+                    {sidebarData.sections.map((section, index) => {
+                        // Determine if section is completed based on progress
+                        const isCompleted = currentQuestionData?.progress &&
+                            index < Math.floor((currentQuestionData.progress.answered / currentQuestionData.progress.total) * sidebarData.sections.length);
+
+                        return (
+                            <div
+                                key={section.section_id}
+                                className={`section ${section.is_current ? 'current' : ''} ${isCompleted ? 'completed' : ''}`}
+                                style={{
+                                    '--section-color': sectionColors[index % sectionColors.length]
+                                }}
+                            >
+                                <span className="section-number">{String(section.order).padStart(2, '0')}</span>
+                                <span className="section-title">{section.title}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         );
     };
 
-    const renderQuestion = () => {
-        const question = getCurrentQuestion();
-        if (!question) return null;
+    const renderProgress = (progressData) => {
+        if (!progressData) return null;
 
         return (
-            <div className="question-content">
-                <h2
-                    style={{
-                        background: question.color,
-                        boxShadow: `0 4px 15px ${question.color.includes('FF6B6B') ? 'rgba(255, 107, 107, 0.3)' : question.color.includes('4ECDC4') ? 'rgba(78, 205, 196, 0.3)' : 'rgba(168, 230, 207, 0.3)'}`
-                    }}
-                >
-                    {currentQuestion}. {question.question}
-                    <span className="question-icon">{question.icon}</span>
-                </h2>
+            <div className="progress-section">
+                <div className="progress-bar">
+                    <div
+                        className="progress-fill"
+                        style={{ width: `${progressData.percentage}%` }}
+                    />
+                </div>
+                <span className="progress-text">
+                    Progress: {progressData.answered}/{progressData.total} ({progressData.percentage}%)
+                </span>
+            </div>
+        );
+    };
 
-                {question.tooltip && (
-                    <div className="question-tooltip">
-                        <div className="tooltip-content">
-                            <p>{question.tooltip}</p>
-                            {question.details && (
-                                <div className="tooltip-details">
-                                    <h4>{question.details.title}</h4>
-                                    <ul>
-                                        {question.details.items.map((item, index) => (
-                                            <li key={index}>{item}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
+    const renderQuestion = (data) => {
+        if (!data || !data.question) return null;
+
+        const question = data.question;
+
+        const renderAnswerOptions = () => {
+            if (question.answer_type === 'radio' && question.answer_choices && question.answer_choices.length > 0) {
+                return (
+                    <div className="answer-options">
+                        {question.answer_choices.map((choice, index) => (
+                            <div key={index} className="answer-option">
+                                <input
+                                    type="radio"
+                                    id={`choice-${index}`}
+                                    name="answer"
+                                    value={choice}
+                                    checked={userAnswers[question.question_id] === choice}
+                                    onChange={(e) => setUserAnswers(prev => ({ ...prev, [question.question_id]: e.target.value }))}
+                                />
+                                <label htmlFor={`choice-${index}`}>{choice}</label>
+                            </div>
+                        ))}
+                    </div>
+                );
+            } else if (question.answer_type === 'checkbox' && question.answer_choices && question.answer_choices.length > 0) {
+                return (
+                    <div className="answer-options">
+                        {question.answer_choices.map((choice, index) => (
+                            <div key={index} className="answer-option">
+                                <input
+                                    type="checkbox"
+                                    id={`choice-${index}`}
+                                    name="answer"
+                                    value={choice}
+                                    checked={userAnswers[question.question_id]?.includes(choice) || false}
+                                    onChange={(e) => {
+                                        const currentAnswers = userAnswers[question.question_id] || [];
+                                        if (e.target.checked) {
+                                            setUserAnswers(prev => ({
+                                                ...prev,
+                                                [question.question_id]: [...currentAnswers, choice]
+                                            }));
+                                        } else {
+                                            setUserAnswers(prev => ({
+                                                ...prev,
+                                                [question.question_id]: currentAnswers.filter(a => a !== choice)
+                                            }));
+                                        }
+                                    }}
+                                />
+                                <label htmlFor={`choice-${index}`}>{choice}</label>
+                            </div>
+                        ))}
+                    </div>
+                );
+            } else if ((question.answer_type === 'select' || question.answer_type === 'dropdown' || question.answer_type === 'yesno') && question.answer_choices && question.answer_choices.length > 0) {
+                // Convert dropdowns to radio buttons for better UX
+                return (
+                    <div className="answer-options">
+                        {question.answer_choices.map((choice, index) => (
+                            <div key={index} className="answer-option">
+                                <input
+                                    type="radio"
+                                    id={`choice-${index}`}
+                                    name="answer"
+                                    value={choice}
+                                    checked={userAnswers[question.question_id] === choice}
+                                    onChange={(e) => setUserAnswers(prev => ({ ...prev, [question.question_id]: e.target.value }))}
+                                />
+                                <label htmlFor={`choice-${index}`}>{choice}</label>
+                            </div>
+                        ))}
+                    </div>
+                );
+            } else if (question.answer_type === 'textarea') {
+                return (
+                    <div className="answer-options">
+                        <textarea
+                            placeholder="Enter your answer"
+                            rows="4"
+                            value={userAnswers[question.question_id] || ''}
+                            onChange={(e) => setUserAnswers(prev => ({ ...prev, [question.question_id]: e.target.value }))}
+                        />
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="answer-options">
+                        <input
+                            type="text"
+                            placeholder="Enter your answer"
+                            value={userAnswers[question.question_id] || ''}
+                            onChange={(e) => setUserAnswers(prev => ({ ...prev, [question.question_id]: e.target.value }))}
+                        />
+                    </div>
+                );
+            }
+        };
+
+        return (
+            <div className="question-container">
+                <div className="question">
+                    <h2>{question.text}</h2>
+                    {renderAnswerOptions()}
+                    <button
+                        onClick={submitAnswer}
+                        className="submit-btn"
+                        disabled={!userAnswers[question.question_id] || (Array.isArray(userAnswers[question.question_id]) && userAnswers[question.question_id].length === 0)}
+                    >
+                        Submit Answer
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    const submitAnswer = async () => {
+        if (!currentQuestionData || !currentQuestionData.question) return;
+
+        const question = currentQuestionData.question;
+        const answerValue = userAnswers[question.question_id];
+
+        if (!answerValue || (Array.isArray(answerValue) && answerValue.length === 0)) {
+            setError('Please provide an answer');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`${API_ENDPOINT}/submit/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    question_id: question.question_id,
+                    answer: answerValue
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to submit answer');
+            }
+
+            // Load next question after a short delay
+            setTimeout(() => {
+                loadCurrentQuestion();
+            }, 500);
+
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            setError('Error submitting answer: ' + error.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const displayCompletion = () => {
+        setShowQuestionnaire(false);
+        setShowCompletion(true);
+    };
+
+    if (showSetup) {
+        return (
+            <div className="dpo-assessment-page">
+                <div className="assessment-header">
+                    <h1>DPO Assessment</h1>
+                    <p>Complete the comprehensive GDPR compliance assessment to evaluate your organization's data protection practices.</p>
+                </div>
+
+                <div className="setup-container">
+                    <div className="setup-card">
+                        <h2>Start Your Assessment</h2>
+                        <p>Your unique session ID has been generated automatically:</p>
+
+                        <div className="user-id-display">
+                            <div className="user-id-box">
+                                <span className="user-id-label">Session ID:</span>
+                                <span className="user-id-value">{userId}</span>
+                            </div>
+                            <button onClick={startQuestionnaire} className="start-btn">
+                                Start Assessment
+                            </button>
+                        </div>
+
+                        {error && <div className="error-message">{error}</div>}
+
+                        <div className="setup-info">
+                            <p><strong>Assessment includes:</strong></p>
+                            <ul>
+                                <li>20 comprehensive sections</li>
+                                <li>GDPR compliance evaluation</li>
+                                <li>Real-time progress tracking</li>
+                                <li>Detailed section navigation</li>
+                                <li>Unique color-coded sections</li>
+                            </ul>
                         </div>
                     </div>
-                )}
-
-                <div className="answer-options">
-                    {question.options.map((option) => (
-                        <label key={option} className="radio-option">
-                            <input
-                                type="radio"
-                                name={`question-${question.id}`}
-                                value={option}
-                                checked={answers[question.id] === option}
-                                onChange={(e) => handleAnswer(question.id, e.target.value)}
-                            />
-                            {option}
-                        </label>
-                    ))}
                 </div>
-
-                <button
-                    className="continue-button"
-                    onClick={handleContinue}
-                    disabled={!answers[question.id]}
-                >
-                    Continue
-                </button>
             </div>
         );
-    };
+    }
+
+    if (showCompletion) {
+        return (
+            <div className="dpo-assessment-page">
+                <div className="assessment-header">
+                    <h1>Assessment Complete!</h1>
+                    <p>Thank you for completing the DPO Assessment.</p>
+                </div>
+
+                <div className="completion-container">
+                    <div className="completion-card">
+                        <h2>🎉 Assessment Finished</h2>
+                        <p>You have successfully completed all sections of the GDPR compliance assessment.</p>
+
+                        <div className="completion-summary">
+                            <h3>Summary</h3>
+                            <p>Total Questions: {currentQuestionData?.progress?.total || 'N/A'}</p>
+                            <p>Questions Answered: {currentQuestionData?.progress?.answered || 'N/A'}</p>
+                            <p>Completion Rate: {currentQuestionData?.progress?.percentage || 'N/A'}%</p>
+                        </div>
+
+                        <button onClick={resetQuestionnaire} className="reset-btn">
+                            Start New Assessment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="dpo-assessment-page">
             <div className="assessment-header">
                 <h1>DPO Assessment</h1>
-                <p>Answer the following questions to determine if your organization needs to appoint a Data Protection Officer (DPO).</p>
+                <p>Complete the comprehensive GDPR compliance assessment to evaluate your organization's data protection practices.</p>
 
-                <div className="progress-section">
-                    <div className="progress-bar">
-                        <div
-                            className="progress-fill"
-                            style={{ width: `${(currentQuestion / questions.length) * 100}%` }}
-                        />
-                    </div>
-                    <span className="progress-text">
-                        {currentQuestion}/{questions.length} ({Math.round((currentQuestion / questions.length) * 100)}%)
-                    </span>
-                </div>
+                {currentQuestionData?.progress && renderProgress(currentQuestionData.progress)}
             </div>
 
             <div className="assessment-content">
-                <div className="sidebar">
-                    <h3>Assessment Progress</h3>
-                    <div className="progress-steps">
-                        {auditSteps.map((step) => (
-                            <div
-                                key={step.id}
-                                className={`step-item ${currentQuestion >= step.id ? 'active' : ''} ${currentQuestion > step.id ? 'completed' : ''}`}
-                            >
-                                <div className="step-number">{String(step.id).padStart(2, '0')}</div>
-                                <div className="step-info">
-                                    <div className="step-title">{step.title}</div>
-                                    <div className="step-description">{step.description}</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {currentQuestionData?.sidebar && renderSidebar(currentQuestionData.sidebar)}
 
                 <div className="main-content">
                     <div className="content-card">
-                        {!showResult ? (
-                            renderQuestion()
+                        {isLoading ? (
+                            <div className="loading-container">
+                                <div className="loading-spinner"></div>
+                                <p>Loading question...</p>
+                            </div>
+                        ) : error ? (
+                            <div className="error-container">
+                                <div className="error-message">
+                                    <h2>Error</h2>
+                                    <p>{error}</p>
+                                    <button onClick={loadCurrentQuestion} className="retry-button">
+                                        Try Again
+                                    </button>
+                                </div>
+                            </div>
                         ) : (
-                            renderResult()
+                            currentQuestionData && renderQuestion(currentQuestionData)
                         )}
                     </div>
                 </div>
