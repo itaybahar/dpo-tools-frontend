@@ -292,18 +292,10 @@ const DPOAssessment = () => {
 
             console.log('Answer submitted successfully:', data);
 
-            // After successful submission, load next question
+            // After successful submission, get the next question from API
+            // The API will provide the next question based on the user's answer
             setTimeout(() => {
-                // Check if this was the last question
-                if (currentQuestionData.progress &&
-                    currentQuestionData.progress.answered >= currentQuestionData.progress.total - 1) {
-                    // This was the last question, show completion
-                    displayCompletion();
-                } else {
-                    // Load next question
-                    loadCurrentQuestion();
-                }
-                setIsLoading(false);
+                loadCurrentQuestion();
             }, 500);
 
         } catch (error) {
