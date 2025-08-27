@@ -250,7 +250,7 @@ const DPOAssessment = () => {
         );
     };
 
-    const submitAnswer = async () => {
+    const submitAnswer = () => {
         if (!currentQuestionData || !currentQuestionData.question) return;
 
         const question = currentQuestionData.question;
@@ -261,10 +261,43 @@ const DPOAssessment = () => {
             return;
         }
 
+        // Save answer locally in JavaScript - no POST request here
+        setUserAnswers(prev => ({ ...prev, [question.question_id]: answerValue }));
+
+        // Clear any previous errors
+        setError(null);
+
+        // Simulate loading for better UX
+        setIsLoading(true);
+
+        // Simulate a short delay for better user experience
+        setTimeout(() => {
+            // Check if this was the last question
+            if (currentQuestionData.progress &&
+                currentQuestionData.progress.answered >= currentQuestionData.progress.total - 1) {
+                // This was the last question, show completion
+                displayCompletion();
+            } else {
+                // Load next question
+                loadCurrentQuestion();
+            }
+            setIsLoading(false);
+        }, 500);
+    };
+
+    const displayCompletion = () => {
+        setShowQuestionnaire(false);
+        setShowCompletion(true);
+    };
+
+    const submitAllAnswers = async () => {
         setIsLoading(true);
         setError(null);
 
         try {
+            console.log('Submitting all answers for user ID:', currentUserId);
+            console.log('User answers:', userAnswers);
+
             const response = await fetch(`${API_ENDPOINT}/submit/`, {
                 method: 'POST',
                 headers: {
@@ -272,33 +305,25 @@ const DPOAssessment = () => {
                 },
                 body: JSON.stringify({
                     user_id: currentUserId,
-                    question_id: question.question_id,
-                    answer: answerValue
+                    answers: userAnswers
                 })
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to submit answer');
+                throw new Error(data.error || 'Failed to submit assessment');
             }
 
-            // Load next question after a short delay
-            setTimeout(() => {
-                loadCurrentQuestion();
-            }, 500);
+            console.log('Assessment submitted successfully:', data);
+            // Show success message or redirect as needed
 
         } catch (error) {
-            console.error('Error submitting answer:', error);
-            setError('Error submitting answer: ' + error.message);
+            console.error('Error submitting assessment:', error);
+            setError('Error submitting assessment: ' + error.message);
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const displayCompletion = () => {
-        setShowQuestionnaire(false);
-        setShowCompletion(true);
     };
 
     if (showSetup) {
@@ -362,9 +387,25 @@ const DPOAssessment = () => {
                             <p>Completion Rate: {currentQuestionData?.progress?.percentage || 'N/A'}%</p>
                         </div>
 
-                        <button onClick={resetQuestionnaire} className="reset-btn">
-                            Start New Assessment
-                        </button>
+                        {error && (
+                            <div className="error-message">
+                                <p>Error: {error}</p>
+                            </div>
+                        )}
+
+                        <div className="completion-actions">
+                            <button
+                                onClick={submitAllAnswers}
+                                className="submit-btn"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? 'Submitting...' : 'Submit Assessment'}
+                            </button>
+
+                            <button onClick={resetQuestionnaire} className="reset-btn">
+                                Start New Assessment
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
