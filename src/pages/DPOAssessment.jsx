@@ -250,7 +250,7 @@ const DPOAssessment = () => {
         );
     };
 
-    const submitAnswer = () => {
+    const submitAnswer = async () => {
         if (!currentQuestionData || !currentQuestionData.question) return;
 
         const question = currentQuestionData.question;
@@ -261,28 +261,56 @@ const DPOAssessment = () => {
             return;
         }
 
-        // Save answer locally in JavaScript - no POST request here
+        // Save answer locally in JavaScript
         setUserAnswers(prev => ({ ...prev, [question.question_id]: answerValue }));
 
         // Clear any previous errors
         setError(null);
 
-        // Simulate loading for better UX
+        // Show loading state
         setIsLoading(true);
 
-        // Simulate a short delay for better user experience
-        setTimeout(() => {
-            // Check if this was the last question
-            if (currentQuestionData.progress &&
-                currentQuestionData.progress.answered >= currentQuestionData.progress.total - 1) {
-                // This was the last question, show completion
-                displayCompletion();
-            } else {
-                // Load next question
-                loadCurrentQuestion();
+        try {
+            // Send answer to API without refreshing the page
+            const response = await fetch(`${API_ENDPOINT}/submit/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    question_id: question.question_id,
+                    answer: answerValue
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to submit answer');
             }
+
+            console.log('Answer submitted successfully:', data);
+
+            // After successful submission, load next question
+            setTimeout(() => {
+                // Check if this was the last question
+                if (currentQuestionData.progress &&
+                    currentQuestionData.progress.answered >= currentQuestionData.progress.total - 1) {
+                    // This was the last question, show completion
+                    displayCompletion();
+                } else {
+                    // Load next question
+                    loadCurrentQuestion();
+                }
+                setIsLoading(false);
+            }, 500);
+
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+            setError('Error submitting answer: ' + error.message);
             setIsLoading(false);
-        }, 500);
+        }
     };
 
     const displayCompletion = () => {
